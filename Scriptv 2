@@ -1,0 +1,195 @@
+-- Load the Orion Library
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+
+-- Create the main window
+local Window = OrionLib:MakeWindow({Name = "Specter Script", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionSpecter"})
+
+-- ESP Functionality
+local ESPEnabled = false
+
+function ToggleESP(state)
+    ESPEnabled = state
+    while ESPEnabled do
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= game.Players.LocalPlayer then
+                local character = player.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    if not character:FindFirstChild("ESP") then
+                        local BillboardGui = Instance.new("BillboardGui", character)
+                        BillboardGui.Name = "ESP"
+                        BillboardGui.AlwaysOnTop = true
+                        BillboardGui.Size = UDim2.new(0, 100, 0, 100)
+                        BillboardGui.Adornee = character:FindFirstChild("HumanoidRootPart")
+
+                        local TextLabel = Instance.new("TextLabel", BillboardGui)
+                        TextLabel.Text = player.Name
+                        TextLabel.BackgroundTransparency = 1
+                        TextLabel.TextSize = 14
+                        TextLabel.TextColor3 = Color3.new(1, 0, 0) -- Red color for visibility
+                        TextLabel.Size = UDim2.new(1, 0, 1, 0)
+                    end
+                end
+            end
+        end
+        wait(1)
+    end
+
+    -- Remove ESP when disabled
+    if not ESPEnabled then
+        for _, player in pairs(game.Players:GetPlayers()) do
+            local character = player.Character
+            if character and character:FindFirstChild("ESP") then
+                character:FindFirstChild("ESP"):Destroy()
+            end
+        end
+    end
+end
+
+-- Fullbright Functionality
+local FullbrightEnabled = false
+local originalLightingSettings = {
+    Brightness = game.Lighting.Brightness,
+    Ambient = game.Lighting.Ambient,
+    OutdoorAmbient = game.Lighting.OutdoorAmbient
+}
+
+function ToggleFullbright(state)
+    FullbrightEnabled = state
+    if FullbrightEnabled then
+        game.Lighting.Brightness = 2
+        game.Lighting.Ambient = Color3.new(1, 1, 1)
+        game.Lighting.OutdoorAmbient = Color3.new(1, 1, 1)
+    else
+        game.Lighting.Brightness = originalLightingSettings.Brightness
+        game.Lighting.Ambient = originalLightingSettings.Ambient
+        game.Lighting.OutdoorAmbient = originalLightingSettings.OutdoorAmbient
+    end
+end
+
+-- Player Speed Functionality
+local function SetPlayerSpeed(speed)
+    local character = game.Players.LocalPlayer.Character
+    if character and character:FindFirstChild("Humanoid") then
+        character.Humanoid.WalkSpeed = speed
+    end
+end
+
+-- Teleport Functions
+local function TeleportToPlayer(targetPlayer)
+    local localPlayer = game.Players.LocalPlayer
+
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+        if localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            localPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(targetPosition)
+        end
+    else
+        OrionLib:MakeNotification({
+            Name = "Teleport Error",
+            Content = "Player not found or invalid target.",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+end
+
+local function TeleportPlayerToMe(targetPlayer)
+    local localPlayer = game.Players.LocalPlayer
+
+    if targetPlayer and localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local myPosition = localPlayer.Character.HumanoidRootPart.Position
+        if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            targetPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(myPosition)
+        end
+    else
+        OrionLib:MakeNotification({
+            Name = "Teleport Error",
+            Content = "Player not found or invalid target.",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+end
+
+-- Function to get the list of player names
+local function GetPlayerNames()
+    local playerNames = {}
+    for _, player in pairs(game.Players:GetPlayers()) do
+        table.insert(playerNames, player.Name)
+    end
+    return playerNames
+end
+
+-- Tabs and Sections
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998", -- Replace with a relevant icon ID
+    PremiumOnly = false
+})
+
+-- ESP Toggle
+MainTab:AddToggle({
+    Name = "ESP",
+    Default = false,
+    Callback = function(state)
+        ToggleESP(state)
+    end
+})
+
+-- Fullbright Toggle
+MainTab:AddButton({
+    Name = "Toggle Fullbright",
+    Callback = function()
+        ToggleFullbright(not FullbrightEnabled)
+    end
+})
+
+-- Player Speed Slider
+MainTab:AddSlider({
+    Name = "Player Speed",
+    Min = 16,
+    Max = 100,
+    Default = 16,
+    Color = Color3.fromRGB(255, 255, 255),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(speed)
+        SetPlayerSpeed(speed)
+    end
+})
+
+-- Dropdown for Teleport to Player
+MainTab:AddDropdown({
+    Name = "Teleport to Player",
+    Options = GetPlayerNames(),
+    Callback = function(selected)
+        local targetPlayer = game.Players:FindFirstChild(selected)
+        TeleportToPlayer(targetPlayer)
+    end
+})
+
+-- Dropdown for Teleport Player to Me
+MainTab:AddDropdown({
+    Name = "Teleport Player to Me",
+    Options = GetPlayerNames(),
+    Callback = function(selected)
+        local targetPlayer = game.Players:FindFirstChild(selected)
+        TeleportPlayerToMe(targetPlayer)
+    end
+})
+
+-- Information Section
+MainTab:AddLabel("Specter Script by ninja_boyssss1") -- Credits updated
+
+-- Credits Tab
+local CreditsTab = Window:MakeTab({
+    Name = "Credits",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+CreditsTab:AddLabel("Script by ninja_boyssss1") -- Credits updated
+CreditsTab:AddLabel("Using Orion Library")
+
+-- Initialize the Orion library UI
+OrionLib:Init()
